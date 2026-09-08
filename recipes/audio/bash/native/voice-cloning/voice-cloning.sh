@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Speechify TTS voice cloning (Bash + curl + jq).
-# Full lifecycle: clone → use → delete.
+# Speechify TTS voice cloning with VERIFIED CONSENT (Bash + curl + jq).
+# Lifecycle: consent challenge → record → create → use → delete.
 
 cd "$(dirname "$0")"
 
@@ -16,33 +16,65 @@ fi
 : "${SPEECHIFY_API_KEY:?Set SPEECHIFY_API_KEY (copy .env.example to .env).}"
 
 BASE="https://api.speechify.ai"
-# Bundled sample: ~26s of NASA ISS spacewalk audio (public domain).
-SAMPLE="fixtures/spacewalk.wav"
+# You provide two files of your OWN voice — the consent recording must be the
+# same speaker as the sample (see README). Defaults: bundled sample + consent.wav.
+SAMPLE="${SAMPLE_PATH:-fixtures/spacewalk.wav}"
+CONSENT_RECORDING="${CONSENT_RECORDING:-consent.wav}"
+SPEAKER_NAME="${SPEAKER_NAME:-Jane Doe}"
 
-# 1. Clone a voice from an audio sample (10-30s of clean speech works well).
-#    POST /v1/voices is multipart/form-data — `curl -F` builds the body and sets
-#    the Content-Type boundary automatically. `consent` is REQUIRED: a JSON
-#    string attesting you have the speaker's permission to clone their voice.
-http_status=0
+# 1. Mint a consent challenge (JSON). Idempotency-Key makes a retry safe.
+challenge=$(curl --fail-with-body --silent --show-error \
+  -X POST "${BASE}/v1/voices/consent-challenges" \
+  -H "Authorization: Bearer ${SPEECHIFY_API_KEY}" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d "$(jq -n --arg name "$SPEAKER_NAME" '{full_name: $name}')")
+
+challenge_id=$(printf '%s' "$challenge" | jq -r '.id')
+phrase=$(printf '%s' "$challenge" | jq -r '.phrase')
+expires=$(printf '%s' "$challenge" | jq -r '.expires_at')
+
+echo ""
+echo "Consent challenge ${challenge_id} (expires ${expires})."
+echo "Have the speaker read this phrase aloud, EXACTLY as written:"
+echo ""
+echo "    ${phrase}"
+echo ""
+echo "Save that recording to: ${CONSENT_RECORDING}"
+echo "It must be the SAME speaker as the sample being cloned."
+echo ""
+
+# 2. Wait for the recording. (Skip the prompt in CI by pre-recording the file.)
+if [ ! -f "$CONSENT_RECORDING" ]; then
+  read -r -p "Press Enter once the consent recording is saved… " _
+fi
+if [ ! -f "$CONSENT_RECORDING" ]; then
+  echo "Consent recording not found at ${CONSENT_RECORDING}." >&2
+  exit 1
+fi
+
+# 3. Create the clone. POST /v1/voices is multipart/form-data — `curl -F` builds
+#    the body and sets the boundary automatically.
 create_body=$(mktemp)
 trap 'rm -f "$create_body"' EXIT
-
 http_status=$(curl --silent --show-error --output "$create_body" --write-out '%{http_code}' \
   -X POST "${BASE}/v1/voices" \
   -H "Authorization: Bearer ${SPEECHIFY_API_KEY}" \
+  -H "Idempotency-Key: $(uuidgen)" \
   -F "name=cookbook-cloned-voice" \
   -F "gender=male" \
-  -F 'consent={"fullName":"Jane Doe","email":"jane@example.com"};type=text/plain' \
-  -F "sample=@${SAMPLE};type=audio/wav")
+  -F "consent_challenge_id=${challenge_id}" \
+  -F "sample=@${SAMPLE};type=audio/wav" \
+  -F "consent_recording=@${CONSENT_RECORDING};type=audio/wav")
 
 if [ "$http_status" = "402" ]; then
-  echo ""
-  echo "Voice cloning isn't included in your current Speechify plan."
-  echo "Upgrade to a plan that includes voice cloning: https://speechify.ai/pricing"
+  echo "Voice cloning isn't included in your current Speechify plan: https://speechify.ai/pricing" >&2
   exit 1
 fi
 if [ "$http_status" -lt 200 ] || [ "$http_status" -ge 300 ]; then
-  echo "POST /v1/voices → ${http_status}" >&2
+  # Branch on the error CODE, not the status — several consent outcomes share 422.
+  code=$(jq -r '.error.code // empty' < "$create_body")
+  echo "POST /v1/voices → ${http_status} ${code:-}" >&2
   cat "$create_body" >&2
   echo >&2
   exit 1
@@ -51,9 +83,10 @@ fi
 voice_id=$(jq -r '.id' < "$create_body")
 display_name=$(jq -r '.display_name' < "$create_body")
 voice_type=$(jq -r '.type' < "$create_body")
+echo ""
 echo "Cloned voice created: ${voice_id} (${display_name}, type=${voice_type})"
 
-# Ensure we always delete the cloned voice, even on failure of step 2.
+# Always delete the cloned voice, even if synthesis fails.
 cleanup() {
   del_status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
     -X DELETE "${BASE}/v1/voices/${voice_id}" \
@@ -66,7 +99,7 @@ cleanup() {
 }
 trap 'cleanup; rm -f "$create_body"' EXIT
 
-# 2. Synthesize speech using the cloned voice — pass its id as voice_id.
+# 4. Synthesize with the clone. Cloned voices are self-serve on simba-3.0.
 speech_response=$(curl --fail-with-body --silent --show-error \
   -X POST "${BASE}/v1/audio/speech" \
   -H "Authorization: Bearer ${SPEECHIFY_API_KEY}" \
@@ -81,4 +114,4 @@ speech_response=$(curl --fail-with-body --silent --show-error \
 printf '%s' "$speech_response" | jq -r '.audio_data' | base64 -d > output.mp3
 echo "Wrote output.mp3"
 
-# 3. Cleanup runs from the EXIT trap.
+# 5. Cleanup runs from the EXIT trap.

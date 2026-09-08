@@ -1,14 +1,12 @@
-# Text-to-Speech: voice cloning (Python)
+# Text-to-Speech: voice cloning with verified consent (Python, SDK)
 
-Clone a voice from an audio sample, synthesize speech with the clone, then delete it — the
-full create → use → delete lifecycle.
+Clone a voice, synthesize with it, then delete it — the full challenge → record → create →
+use → delete lifecycle using the `speechify-api` SDK.
 
 ## Prerequisites
 
 - A Speechify API key — https://platform.speechify.ai/api-keys
-- **Voice cloning enabled on your plan** — otherwise the recipe exits with a message
-  pointing to [Speechify pricing](https://speechify.ai/pricing) (the API returns
-  `402 voice_cloning_not_included`).
+- **Voice cloning enabled on your plan** (the create returns `402` otherwise)
 - Python 3.10+ and [uv](https://docs.astral.sh/uv/)
 
 ## Setup
@@ -18,31 +16,30 @@ cp .env.example .env   # then paste your SPEECHIFY_API_KEY
 uv sync
 ```
 
+## Verified consent — you record two clips
+
+1. `client.voices.consent_challenges.create(full_name=...)` → a **phrase** and single-use **id**.
+2. Record the speaker reading the phrase aloud; save it (default `consent.wav`).
+3. `client.voices.create(sample=, consent_recording=, consent_challenge_id=, idempotency_key=)`.
+
+**The consent recording must be the same speaker as the sample.** The bundled
+`fixtures/spacewalk.wav` is a different speaker — set `SAMPLE_PATH` to your own voice for a
+verifiable clone. A mismatch returns `422 consent_speaker_mismatch`, which the recipe explains.
+
 ## Run
 
 ```bash
 uv run main.py
 ```
 
-Produces an `output.mp3` spoken in the cloned voice, then removes the cloned voice.
-
 ## What it does
 
-- `client.voices.create(...)` — clones a voice from `fixtures/spacewalk.wav`. Required
-  fields: `name`, `gender`, `sample` (a readable binary file of 10–30s of clean speech),
-  and `consent`.
-- `client.audio.speech(...)` with `voice_id` set to the new voice's id.
-- `client.voices.delete(id)` — cleans up so personal voices don't accumulate.
+- Mints a consent challenge, prints the phrase, waits for `consent.wav`.
+- `client.voices.create(...)` with the sample, consent recording, and challenge id.
+- `client.audio.speech(...)` with the clone's id on `simba-3.0` (clones are self-serve there).
+- `client.voices.delete(voice_id)` to clean up.
+- Branches on the consent error **code** (`err.body["error"]["code"]`), not the HTTP status.
 
-## Consent
-
-`consent` is a **required** JSON string attesting you have the speaker's permission to
-clone their voice (`{"fullName": "...", "email": "..."}`). Only clone voices you are
-authorized to. The bundled `fixtures/spacewalk.wav` is ~26s of NASA ISS spacewalk audio
-(U.S. government work, public domain); replace it with your own consented sample for real
-use.
-
-> Note: `voices.list()` is eventually consistent — a just-deleted voice may still appear in
-> the list briefly. The delete itself is immediate (a subsequent delete returns 404).
->
-> Voice cloning reference: https://docs.speechify.ai/tts/guides/voice-cloning
+> The old `consent` JSON field is deprecated; the verified flow is the
+> `Speechify-Version: 2026-09-13` shape, which the v4 SDK sends by default.
+> Reference: https://docs.speechify.ai/build/voice-cloning-api

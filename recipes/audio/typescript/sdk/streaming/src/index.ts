@@ -15,12 +15,16 @@ async function main() {
   // ArrayBuffer, Blob, or Uint8Array. Streaming gives low time-to-first-byte for
   // long inputs.
   const response = await client.audio.stream({
+    // v4: the `Accept` codec selector stays top-level; the synthesis params
+    // (input, voice_id, model, output_format) live under `body`.
     Accept: "audio/mpeg",
-    input:
-      "Streaming lets you start playing audio before the whole clip is ready. " +
-      "This sentence is being synthesized and written to disk chunk by chunk.",
-    voice_id: "geffen_32",
-    model: "simba-3.2",
+    body: {
+      input:
+        "Streaming lets you start playing audio before the whole clip is ready. " +
+        "This sentence is being synthesized and written to disk chunk by chunk.",
+      voice_id: "geffen_32",
+      model: "simba-3.2",
+    },
   });
 
   const outFile = "output.mp3";

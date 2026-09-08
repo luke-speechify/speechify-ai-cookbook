@@ -32,45 +32,62 @@ recipes/<product>/<language>/{sdk,native}/<recipe>/
 - **SDK** — uses an official Speechify SDK for that language.
 - **Native** — calls the REST API directly (no SDK), e.g. `fetch` in TS, `requests` in Python, `curl` in Bash.
 
+Every recipe below exists in each **flavor** shown. All recipes target the **v4 SDKs**
+(`@speechify/api` 4.x, `speechify-api` 4.x) and the current REST surface.
+
 ### Audio — TypeScript
 
-| Recipe                                                           | Flavor | Description                                               |
-| ---------------------------------------------------------------- | ------ | --------------------------------------------------------- |
-| [quickstart](./recipes/audio/typescript/sdk/quickstart)          | SDK    | Synthesize speech to an MP3 file.                         |
-| [quickstart](./recipes/audio/typescript/native/quickstart)       | Native | Same, calling the REST API directly with `fetch`.         |
-| [streaming](./recipes/audio/typescript/sdk/streaming)            | SDK    | Stream audio to disk as it is generated.                  |
-| [streaming](./recipes/audio/typescript/native/streaming)         | Native | Streaming via raw `fetch` + `pipeline`.                   |
-| [ssml-emotion](./recipes/audio/typescript/sdk/ssml-emotion)      | SDK    | Control emotion, pitch, rate, pauses & emphasis via SSML. |
-| [ssml-emotion](./recipes/audio/typescript/native/ssml-emotion)   | Native | Same SSML controls, via raw `fetch`.                      |
-| [speech-marks](./recipes/audio/typescript/sdk/speech-marks)      | SDK    | Word-level timestamps → WebVTT captions.                  |
-| [speech-marks](./recipes/audio/typescript/native/speech-marks)   | Native | Same captions, via raw `fetch`.                           |
-| [voice-cloning](./recipes/audio/typescript/sdk/voice-cloning)    | SDK    | Clone a voice from a sample, synthesize, then delete it.  |
-| [voice-cloning](./recipes/audio/typescript/native/voice-cloning) | Native | Same lifecycle, via raw `fetch` + multipart `FormData`.   |
+| Recipe                                                                                            | Flavor       | Description                                                       |
+| ------------------------------------------------------------------------------------------------- | ------------ | ----------------------------------------------------------------- |
+| [quickstart](./recipes/audio/typescript/sdk/quickstart)                                           | SDK / Native | Synthesize speech to an MP3 file.                                 |
+| [streaming](./recipes/audio/typescript/sdk/streaming)                                             | SDK / Native | Stream audio to disk as it is generated.                          |
+| [ssml-emotion](./recipes/audio/typescript/sdk/ssml-emotion)                                       | SDK / Native | Control emotion, pitch, rate, pauses & emphasis via SSML.         |
+| [speech-marks](./recipes/audio/typescript/sdk/speech-marks)                                       | SDK / Native | Word-level timestamps → WebVTT captions.                          |
+| [multilingual](./recipes/audio/typescript/sdk/multilingual)                                       | SDK / Native | Non-English synthesis with `simba-3.0` + the `language` param.    |
+| [output-formats](./recipes/audio/typescript/sdk/output-formats)                                   | SDK / Native | Pick codec/sample-rate/bitrate — telephony `ulaw_8000`, mp3, pcm. |
+| [voice-cloning](./recipes/audio/typescript/sdk/voice-cloning)                                     | SDK / Native | Verified-consent clone → synthesize → delete lifecycle.           |
+| [list-models](./recipes/audio/typescript/sdk/list-models)                                         | SDK / Native | List TTS models to drive a picker.                                |
+| [list-voices](./recipes/audio/typescript/sdk/list-voices)                                         | SDK / Native | List available voices, with pagination.                           |
+| [voice-language-model-support](./recipes/audio/typescript/sdk/voice-language-model-support)       | SDK / Native | Which model + language combos a voice supports.                   |
+| [version-pinning-and-idempotency](./recipes/audio/typescript/sdk/version-pinning-and-idempotency) | SDK / Native | Pin `Speechify-Version`; safe retries with `Idempotency-Key`.     |
+| [error-handling](./recipes/audio/typescript/sdk/error-handling)                                   | SDK / Native | Typed errors, error codes, `Retry-After`, request ids.            |
+| [watermark](./recipes/audio/typescript/native/watermark)                                          | Native       | Detect/verify the Speechify audio watermark (REST-only).          |
 
 ### Audio — Python
 
-| Recipe                                                       | Flavor | Description                                               |
-| ------------------------------------------------------------ | ------ | --------------------------------------------------------- |
-| [quickstart](./recipes/audio/python/sdk/quickstart)          | SDK    | Synthesize speech to an MP3 file.                         |
-| [quickstart](./recipes/audio/python/native/quickstart)       | Native | Same, calling the REST API directly with `requests`.      |
-| [streaming](./recipes/audio/python/sdk/streaming)            | SDK    | Stream audio to disk as it is generated.                  |
-| [streaming](./recipes/audio/python/native/streaming)         | Native | Streaming via raw `requests` with `stream=True`.          |
-| [ssml-emotion](./recipes/audio/python/sdk/ssml-emotion)      | SDK    | Control emotion, pitch, rate, pauses & emphasis via SSML. |
-| [ssml-emotion](./recipes/audio/python/native/ssml-emotion)   | Native | Same SSML controls, via raw `requests`.                   |
-| [speech-marks](./recipes/audio/python/sdk/speech-marks)      | SDK    | Word-level timestamps → WebVTT captions.                  |
-| [speech-marks](./recipes/audio/python/native/speech-marks)   | Native | Same captions, via raw `requests`.                        |
-| [voice-cloning](./recipes/audio/python/sdk/voice-cloning)    | SDK    | Clone a voice from a sample, synthesize, then delete it.  |
-| [voice-cloning](./recipes/audio/python/native/voice-cloning) | Native | Same lifecycle, via raw `requests` + multipart.           |
+| Recipe                                                                                        | Flavor       | Description                                                       |
+| --------------------------------------------------------------------------------------------- | ------------ | ----------------------------------------------------------------- |
+| [quickstart](./recipes/audio/python/sdk/quickstart)                                           | SDK / Native | Synthesize speech to an MP3 file.                                 |
+| [streaming](./recipes/audio/python/sdk/streaming)                                             | SDK / Native | Stream audio to disk as it is generated.                          |
+| [ssml-emotion](./recipes/audio/python/sdk/ssml-emotion)                                       | SDK / Native | Control emotion, pitch, rate, pauses & emphasis via SSML.         |
+| [speech-marks](./recipes/audio/python/sdk/speech-marks)                                       | SDK / Native | Word-level timestamps → WebVTT captions.                          |
+| [multilingual](./recipes/audio/python/sdk/multilingual)                                       | SDK / Native | Non-English synthesis with `simba-3.0` + the `language` param.    |
+| [output-formats](./recipes/audio/python/sdk/output-formats)                                   | SDK / Native | Pick codec/sample-rate/bitrate — telephony `ulaw_8000`, mp3, pcm. |
+| [voice-cloning](./recipes/audio/python/sdk/voice-cloning)                                     | SDK / Native | Verified-consent clone → synthesize → delete lifecycle.           |
+| [list-models](./recipes/audio/python/sdk/list-models)                                         | SDK / Native | List TTS models to drive a picker.                                |
+| [list-voices](./recipes/audio/python/sdk/list-voices)                                         | SDK / Native | List available voices, with pagination.                           |
+| [voice-language-model-support](./recipes/audio/python/sdk/voice-language-model-support)       | SDK / Native | Which model + language combos a voice supports.                   |
+| [version-pinning-and-idempotency](./recipes/audio/python/sdk/version-pinning-and-idempotency) | SDK / Native | Pin `Speechify-Version`; safe retries with `Idempotency-Key`.     |
+| [error-handling](./recipes/audio/python/sdk/error-handling)                                   | SDK / Native | Typed errors, error codes, `Retry-After`, request ids.            |
+| [watermark](./recipes/audio/python/native/watermark)                                          | Native       | Detect/verify the Speechify audio watermark (REST-only).          |
 
 ### Audio — Bash (curl)
 
-| Recipe                                                     | Flavor | Description                                                       |
-| ---------------------------------------------------------- | ------ | ----------------------------------------------------------------- |
-| [quickstart](./recipes/audio/bash/native/quickstart)       | Native | Synthesize speech to an MP3 file with `curl` + `jq`.              |
-| [streaming](./recipes/audio/bash/native/streaming)         | Native | Stream raw audio bytes straight to disk with `curl --no-buffer`.  |
-| [ssml-emotion](./recipes/audio/bash/native/ssml-emotion)   | Native | SSML emotion/prosody via a single `curl` call (`jq` builds JSON). |
-| [speech-marks](./recipes/audio/bash/native/speech-marks)   | Native | Speech marks → WebVTT captions, formatted entirely in `jq`.       |
-| [voice-cloning](./recipes/audio/bash/native/voice-cloning) | Native | Multipart clone → speech → delete, with an `EXIT` trap cleanup.   |
+| Recipe                                                                                         | Flavor | Description                                                        |
+| ---------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------ |
+| [quickstart](./recipes/audio/bash/native/quickstart)                                           | Native | Synthesize speech to an MP3 file with `curl` + `jq`.               |
+| [streaming](./recipes/audio/bash/native/streaming)                                             | Native | Stream raw audio bytes straight to disk with `curl --no-buffer`.   |
+| [ssml-emotion](./recipes/audio/bash/native/ssml-emotion)                                       | Native | SSML emotion/prosody via a single `curl` call.                     |
+| [speech-marks](./recipes/audio/bash/native/speech-marks)                                       | Native | Speech marks → WebVTT captions, formatted in `jq`.                 |
+| [multilingual](./recipes/audio/bash/native/multilingual)                                       | Native | Non-English synthesis with `simba-3.0` + the `language` param.     |
+| [output-formats](./recipes/audio/bash/native/output-formats)                                   | Native | Pick codec/sample-rate/bitrate — telephony `ulaw_8000`, mp3, pcm.  |
+| [voice-cloning](./recipes/audio/bash/native/voice-cloning)                                     | Native | Verified-consent clone → synthesize → delete, `EXIT`-trap cleanup. |
+| [list-models](./recipes/audio/bash/native/list-models)                                         | Native | List TTS models to drive a picker.                                 |
+| [list-voices](./recipes/audio/bash/native/list-voices)                                         | Native | List available voices, with pagination.                            |
+| [voice-language-model-support](./recipes/audio/bash/native/voice-language-model-support)       | Native | Which model + language combos a voice supports.                    |
+| [version-pinning-and-idempotency](./recipes/audio/bash/native/version-pinning-and-idempotency) | Native | Pin `Speechify-Version`; safe retries with `Idempotency-Key`.      |
+| [error-handling](./recipes/audio/bash/native/error-handling)                                   | Native | Error envelope, error codes, `Retry-After`, request ids.           |
+| [watermark](./recipes/audio/bash/native/watermark)                                             | Native | Detect/verify the Speechify audio watermark.                       |
 
 ## Repository layout
 
